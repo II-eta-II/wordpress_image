@@ -1,0 +1,43 @@
+name: Deploy to Amazon ECS
+
+on:
+  push:
+    branches: [ "main" ]
+
+# 1. 這是 OIDC 必須新增的權限設定
+permissions:
+  id-token: write   # 這是申請臨時金鑰必備的
+  contents: read    # 讀取程式碼內容
+
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REPOSITORY: cjc102-10-ecr-repo
+  # 2. 將你剛建立的角色 ARN 放在這裡
+  AWS_ROLE_ARN: arn:aws:iam::754515738597:role/GitHubActionsServiceRole
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 3. 修改登入 AWS 的方式 (移除 Access Key)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ... 後續的 Build 與 Push 步驟保持不變 ...
+      - name: Build, tag, and push image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
