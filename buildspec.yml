@@ -1,22 +1,24 @@
 version: 0.2
 
+# 環境變數在 CodeBuild 專案中設定：
+# - ECR_REPO_URI: ECR repository 完整 URI (例: 123456789.dkr.ecr.ap-northeast-1.amazonaws.com/my-repo)
+# - AWS_ACCOUNT_ID: AWS 帳號 ID
+# - AWS_DEFAULT_REGION: AWS 區域
+
 phases:
-  install:
-    runtime-versions:
-      python: 3.12
-    commands:
-      - docker login -u $dockerhub_username -p $dockerhub_password
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 875707074940.dkr.ecr.ap-northeast-1.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - sh build.sh
+      - docker build -t $ECR_REPO_URI:latest .
+      - docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push 875707074940.dkr.ecr.ap-northeast-1.amazonaws.com/cjc102-19-ecr-repo:latest
+      - docker push $ECR_REPO_URI:latest
+      - docker push $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
