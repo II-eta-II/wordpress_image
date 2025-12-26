@@ -1,3 +1,7 @@
+upstream phpfpm {
+    server ${PHPFPM_HOST}:9000;
+}
+
 server {
     listen 80;
     server_name _;
@@ -12,7 +16,7 @@ server {
     }
 
     location ~ \.php$ {
-        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_pass phpfpm;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
