@@ -1,19 +1,4 @@
-# 敏感資訊
-.env
-*.log
-
-# Docker 相關
-docker-compose.override.yml
-
-# WordPress 核心檔案 (我們由 Docker Image 提供，不進 Git)
-wp-config.php
-
-# WordPress 內容相關
-wp-content/uploads/        # 上傳的圖片絕對不要進 Git
-wp-content/upgrade/        # 暫存更新檔
-wp-content/cache/          # 快取檔案
-wp-content/index.php       # 預設的空白檔案
-
-# OS 垃圾檔案
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
