@@ -1,4 +1,5 @@
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+src/wp-content/uploads/
+.env
+db_data/
+*.log
+*.pid

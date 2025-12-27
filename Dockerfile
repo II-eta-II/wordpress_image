@@ -1,25 +1,22 @@
+# 使用輕量級 Alpine + PHP 8.3
 FROM php:8.3-fpm-alpine
 
-# 安裝必要的套件與 PHP 擴展
-RUN apk add --no-cache nginx libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd mysqli pdo_mysql zip opcache
+# 安裝 Nginx, Supervisor 和必要的 PHP 擴充
+RUN apk add --no-cache nginx supervisor \
+    && docker-php-ext-install mysqli pdo pdo_mysql opcache
 
-# 設定工作目錄
-WORKDIR /var/www/html
-
-# 複製 Nginx 設定
+# 複製設定檔
 COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY supervisord.conf /etc/supervisord.conf
+COPY uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
-# 下載 WordPress 官方檔案
-ADD https://wordpress.org/latest.tar.gz /tmp/wordpress.tar.gz
-RUN tar -xzf /tmp/wordpress.tar.gz --strip-components=1 -C /var/www/html \
-    && rm /tmp/wordpress.tar.gz \
-    && chown -R www-data:www-data /var/www/html
+# 複製程式碼 (排除 uploads，因為它在庫外)
+# 注意：這裡會複製 wp-content/themes 和 plugins
+WORKDIR /var/www/html
+COPY src/ .
 
-# 複製啟動腳本並給予權限
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# 修正權限 (確保 Web Server 能讀寫)
+RUN chown -R www-data:www-data /var/www/html
 
-EXPOSE 80
-ENTRYPOINT ["docker-entrypoint.sh"]
+# 啟動 Supervisor (同時管理 Nginx 和 PHP)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
